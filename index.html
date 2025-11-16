@@ -5,10 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Paws & Preferences — Find Your Favourite Kitty</title>
 
-<!-- Cute sound effects -->
-<audio id="soundLike" src="meow.mp3"></audio>
-<audio id="soundDislike" src="pop.mp3"></audio>
-<audio id="soundUndo" src="mixkit-video-game-retro-click-237.wav"></audio>
+<!-- Audio elements with correct asset paths -->
+<audio id="meowAudio" src="assets/meow.mp3" preload="auto"></audio>
+<audio id="popAudio" src="assets/pop.mp3" preload="auto"></audio>
 
 <style>
 /* -----------------------------------------------------
@@ -240,13 +239,16 @@ body::before{
   const resetBtn = document.getElementById('resetBtn');
   const undoBtn = document.getElementById('undoBtn');
 
-  const soundLike = document.getElementById('soundLike');
-  const soundDislike = document.getElementById('soundDislike');
-  const soundUndo = document.getElementById('soundUndo');
+  // Audio elements
+  const meowAudio = document.getElementById('meowAudio');
+  const popAudio = document.getElementById('popAudio');
 
   let cards = [];
   let liked = [];
   let history = [];
+  let audioCtx = null;
+  let meowBuffer = null;
+  let popBuffer = null;
 
   function makeCatUrl(i){
     return `https://cataas.com/cat?type=medium&timestamp=${Date.now()}_${i}`;
@@ -286,13 +288,45 @@ body::before{
     panel.querySelector('#closeSummary').onclick=()=>overlay.remove();
   }
 
+  // Play sound with AudioBuffer fallback to HTMLAudioElement
+  function playSound(buffer, fallbackEl) {
+    if (audioCtx && buffer) {
+      try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(audioCtx.destination);
+        src.start(0);
+        return;
+      } catch (e) { /* fallthrough */ }
+    }
+    // Fallback: clone and play HTMLAudioElement
+    if (fallbackEl) {
+      try {
+        const clone = fallbackEl.cloneNode(true);
+        clone.play().catch(() => { /* ignore */ });
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  // Fetch and decode audio file into AudioBuffer
+  async function fetchAndDecode(url) {
+    try {
+      const res = await fetch(url);
+      const arrayBuffer = await res.arrayBuffer();
+      return await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (e) {
+      return null;
+    }
+  }
+
   function swipeTop(direction){
     const top = cardArea.lastElementChild;
     if(!top) return;
     const url = top.querySelector('img').src;
 
-    if(direction==="right") soundLike.play();
-    else soundDislike.play();
+    // Play sound
+    if (direction === 'right') playSound(meowBuffer, meowAudio);
+    else playSound(popBuffer, popAudio);
 
     top.style.transition='transform 350ms ease,opacity 250ms ease';
     const offX = direction==='right' ? window.innerWidth : -window.innerWidth;
@@ -308,7 +342,7 @@ body::before{
     const last = history.pop();
     if(!last) return;
 
-    soundUndo.play();
+    playSound(popBuffer, popAudio);
 
     const node = createCard(last.url,999);
     if(last.type==='right'){ const idx=liked.lastIndexOf(last.url); if(idx>-1) liked.splice(idx,1); }
@@ -344,11 +378,11 @@ body::before{
       const t = cardArea.clientWidth*0.25;
       if(cx>t){ card.style.transition='350ms'; card.style.transform=`translate(${window.innerWidth}px,${cy}px) rotate(30deg)`; card.style.opacity=0;
         setTimeout(()=>{card.remove();history.push({type:'right',url:img.src});liked.push(img.src);if(!cardArea.lastElementChild)showSummary();},320);
-        soundLike.play();
+        playSound(meowBuffer, meowAudio);
       }
       else if(cx<-t){ card.style.transition='350ms'; card.style.transform=`translate(${-window.innerWidth}px,${cy}px) rotate(-30deg)`; card.style.opacity=0;
         setTimeout(()=>{card.remove();history.push({type:'left',url:img.src});if(!cardArea.lastElementChild)showSummary();},320);
-        soundDislike.play();
+        playSound(popBuffer, popAudio);
       }
       else{ card.style.transition='220ms'; card.style.transform=''; card.classList.remove('show-like','show-dislike'); }
       cx=cy=0;
@@ -367,6 +401,17 @@ body::before{
     const urls=await preloadCats(NUM_CATS);
     urls.forEach((u,i)=>createCard(u,i));
     setTimeout(()=>setup(cardArea.children),40);
+
+    // Initialize AudioContext on first user gesture
+    document.addEventListener('pointerdown', async () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Start decoding audio files (non-blocking)
+        fetchAndDecode('assets/meow.mp3').then(buf => { if (buf) meowBuffer = buf; });
+        fetchAndDecode('assets/pop.mp3').then(buf => { if (buf) popBuffer = buf; });
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    }, { once: true, passive: true });
   })();
 
 })();
