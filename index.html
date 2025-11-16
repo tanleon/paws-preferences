@@ -212,7 +212,6 @@ body::before{
 <!-- bottom controls -->
 <div style="position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center">
   <div class="controls">
-    <button class="btn" id="undoBtn">Undo</button>
     <button class="btn" id="dislikeBtn">Dislike</button>
     <button class="btn strong" id="likeBtn">Like</button>
     <button class="btn" id="resetBtn">Reset</button>
@@ -237,7 +236,6 @@ body::before{
   const likeBtn = document.getElementById('likeBtn');
   const dislikeBtn = document.getElementById('dislikeBtn');
   const resetBtn = document.getElementById('resetBtn');
-  const undoBtn = document.getElementById('undoBtn');
 
   // Audio elements
   const meowAudio = document.getElementById('meowAudio');
@@ -338,22 +336,9 @@ body::before{
     setTimeout(()=>{ top.remove(); history.push({type:direction,url}); if(direction==='right') liked.push(url); if(!cardArea.lastElementChild) showSummary(); },300);
   }
 
-  function undo(){
-    const last = history.pop();
-    if(!last) return;
-
-    playSound(popBuffer, popAudio);
-
-    const node = createCard(last.url,999);
-    if(last.type==='right'){ const idx=liked.lastIndexOf(last.url); if(idx>-1) liked.splice(idx,1); }
-    node.style.transition='none';node.style.opacity='1';
-    addDragHandlers(node);
-  }
-
   likeBtn.onclick=()=>swipeTop('right');
   dislikeBtn.onclick=()=>swipeTop('left');
   resetBtn.onclick=()=>location.reload();
-  undoBtn.onclick=undo;
 
   function addDragHandlers(card){
     let sx=0, sy=0, cx=0, cy=0, drag=false;
