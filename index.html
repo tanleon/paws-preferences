@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Paws & Preferences — Find Your Favourite Kitty</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Onboarding -->
+  <div id="onboarding" class="onboarding">
+    <div class="onboard-card">
+      <img src="assets/paw1.svg" class="onboard-paw" alt="paw"/>
+      <h1>Welcome to Paws & Preferences</h1>
+      <p>Swipe right if you like the kitty. Swipe left if you don't. Cute animations, sounds & paws included 🐾</p>
+      <div class="onboard-actions">
+        <button id="startBtn" class="btn primary">Start Exploring Cats 😺</button>
+        <button id="skipBtn" class="btn ghost">Skip Intro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating paw prints container (visual only) -->
+  <div class="paw-container" aria-hidden="true"></div>
+
+  <!-- App -->
+  <div id="app" class="app hidden">
+    <header class="app-header">
+      <div class="title-block">
+        <img src="assets/paw2.svg" class="logo-paw" alt="paw logo">
+        <div>
+          <h2 class="title">Paws & Preferences</h2>
+          <div class="subtitle">Swipe right to like • left to dislike</div>
+        </div>
+      </div>
+      <div class="controls-top">
+        <button id="undoBtn" class="btn">↩ Undo</button>
+        <button id="resetBtn" class="btn">🔄 Reset</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div id="cardArea" class="card-area" aria-live="polite"></div>
+
+      <div class="bottom-controls">
+        <button id="dislikeBtn" class="btn dislike">💔 Nope</button>
+        <button id="likeBtn" class="btn like primary">❤️ Like</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Summary -->
+  <div id="summary" class="summary hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>All done — you liked <span id="likedCount">0</span> kitty(ies) 🐱💕</h3>
+        <button id="closeSummary" class="btn">Close</button>
+      </div>
+      <div id="likedGrid" class="liked-grid"></div>
+      <div style="text-align:center;margin-top:14px">
+        <button id="restartBtn" class="btn primary">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessible hidden audio elements; script will try to load these but will fallback to WebAudio if missing -->
+  <audio id="meowAudio" src="assets/meow.mp3" preload="auto"></audio>
+  <audio id="popAudio" src="assets/pop.mp3" preload="auto"></audio>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
