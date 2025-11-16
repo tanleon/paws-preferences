@@ -1,72 +1,375 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Paws & Preferences — Find Your Favourite Kitty</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Paws & Preferences — Find Your Favourite Kitty</title>
+
+<!-- Cute sound effects -->
+<audio id="soundLike" src="meow.mp3"></audio>
+<audio id="soundDislike" src="pop.mp3"></audio>
+<audio id="soundUndo" src="mixkit-video-game-retro-click-237.wav"></audio>
+
+<style>
+/* -----------------------------------------------------
+   THEME + COLORS
+----------------------------------------------------- */
+:root{
+  --bg:#fff0f5;
+  --card:#fffafc;
+  --accent:#ff69b4;
+  --muted:#888;
+  --glass: rgba(255,255,255,0.5);
+  --glow: 0 0 18px rgba(255,105,180,0.35);
+}
+
+html,body{
+  height:100%; margin:0;
+  font-family:"Inter", system-ui, sans-serif;
+  background: radial-gradient(circle at 50% 20%, #ffe4e1, #ffd1dc 85%);
+  color:#333;
+  overflow-x:hidden;
+}
+
+/* cute sparkles floating in background */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    radial-gradient(#fff4 1px, transparent 1px),
+    radial-gradient(#fff3 1px, transparent 1px);
+  background-size: 3px 3px, 2px 2px;
+  background-position: 20% 40%, 80% 70%;
+  animation: sparkle 12s linear infinite;
+}
+@keyframes sparkle{
+  0%{transform:translateY(0)}
+  100%{transform:translateY(-120px)}
+}
+
+.app{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+/* -----------------------------------------------------
+   CARD STYLING
+----------------------------------------------------- */
+.card-area{
+  width:100%;max-width:420px;height:720px;
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.card{
+  position:absolute;width:92%;max-width:380px;
+  height:64%;max-height:520px;border-radius:22px;
+  background:var(--card);
+  box-shadow:0 18px 40px rgba(255,182,193,0.5);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:transform .2s ease,opacity .2s ease;
+  border:1px solid rgba(255,192,203,0.2);
+  backdrop-filter: blur(4px);
+  animation: appear 0.45s ease;
+}
+@keyframes appear { from{opacity:0;transform:scale(.95)} }
+
+.card:hover{
+  transform:translateY(-4px) scale(1.02);
+}
+
+/* slight gradient border */
+.card::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:22px;
+  padding:1px;
+  background:linear-gradient(135deg, #ff69b433, #ffb6c133);
+  -webkit-mask:
+     linear-gradient(#fff 0 0) content-box,
+     linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+}
+
+/* image */
+.card img{
+  width:100%;height:100%;object-fit:cover;
+}
+
+/* meta fade */
+.card .meta{
+  padding:12px 14px;
+  background:linear-gradient(180deg, transparent, rgba(255,182,193,0.5));
+  position:absolute;left:0;right:0;bottom:0;
+  color:#333;font-weight:600;
+}
+
+/* stack offset */
+.card:nth-child(1){transform:translateY(0) scale(1)}
+.card:nth-child(2){transform:translateY(8px) scale(.985)}
+.card:nth-child(3){transform:translateY(16px) scale(.97)}
+
+/* -----------------------------------------------------
+   BADGES
+----------------------------------------------------- */
+.badge{
+  position:absolute;top:18px;padding:10px 14px;
+  border-radius:12px;font-weight:700;
+  letter-spacing:0.7px;
+  backdrop-filter:blur(7px);
+  opacity:0;transform:scale(.85);
+  transition: opacity .15s, transform .15s;
+  box-shadow: var(--glow);
+}
+
+.badge.like{
+  left:18px;background:rgba(255,105,180,0.2);color:#c71585;
+}
+.badge.dislike{
+  right:18px;background:rgba(255,192,203,0.18);color:#b22222;
+}
+
+.card.show-like .badge.like,
+.card.show-dislike .badge.dislike{
+  opacity:1;transform:scale(1);
+}
+
+/* -----------------------------------------------------
+   CONTROLS
+----------------------------------------------------- */
+.controls{
+  display:flex;gap:12px;justify-content:center;
+}
+.btn{
+  padding:13px 17px;border-radius:14px;
+  background:var(--glass);
+  border:1px solid rgba(255,105,180,0.08);
+  color:var(--muted);font-weight:700;
+  transition:0.22s;
+}
+.btn:hover{
+  background:rgba(255,182,193,0.3);
+  transform:translateY(-2px);
+}
+
+.btn.strong{
+  background:linear-gradient(90deg,var(--accent),#ffb6c1);
+  color:#051729;font-weight:800;
+}
+.btn.strong:hover{
+  box-shadow:0 0 16px rgba(255,105,180,0.65);
+}
+
+/* -----------------------------------------------------
+   SUMMARY PANEL
+----------------------------------------------------- */
+.summary{
+  position:fixed; inset:0;
+  background:rgba(255,240,245,0.85); backdrop-filter:blur(7px);
+  display:flex;align-items:center;justify-content:center;
+}
+
+.panel{
+  background:linear-gradient(180deg,#fff0f5,#ffd1dc);
+  padding:22px 24px;
+  border-radius:16px;
+  box-shadow:0 14px 40px rgba(255,182,193,0.7);
+  width:100%;max-width:760px;
+  animation: popin .4s ease;
+}
+@keyframes popin { from{transform:scale(.85);opacity:0} }
+
+/* liked items */
+.liked-grid{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;
+}
+.liked-grid img{
+  width:88px;height:122px;object-fit:cover;border-radius:12px;
+  border:1px solid rgba(255,192,203,0.3);
+}
+
+/* mobile */
+@media (max-width:420px){
+  .card-area{height:68vh}
+  .card{height:66%}
+}
+</style>
 </head>
+
 <body>
-  <!-- Onboarding -->
-  <div id="onboarding" class="onboarding">
-    <div class="onboard-card">
-      <img src="assets/paw1.svg" class="onboard-paw" alt="paw"/>
-      <h1>Welcome to Paws & Preferences</h1>
-      <p>Swipe right if you like the kitty. Swipe left if you don't. Cute animations, sounds & paws included 🐾</p>
-      <div class="onboard-actions">
-        <button id="startBtn" class="btn primary">Start Exploring Cats 😺</button>
-        <button id="skipBtn" class="btn ghost">Skip Intro</button>
-      </div>
+
+<!-- title -->
+<div class="app">
+  <div style="text-align:center;margin-bottom:18px;position:absolute;top:18px">
+    <strong style="font-size:20px;letter-spacing:0.3px">🐾 Paws & Preferences</strong>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px">
+      Swipe right to like — left to dislike
     </div>
   </div>
 
-  <!-- Floating paw prints container (visual only) -->
-  <div class="paw-container" aria-hidden="true"></div>
+  <div class="card-area" id="cardArea"></div>
+</div>
 
-  <!-- App -->
-  <div id="app" class="app hidden">
-    <header class="app-header">
-      <div class="title-block">
-        <img src="assets/paw2.svg" class="logo-paw" alt="paw logo">
-        <div>
-          <h2 class="title">Paws & Preferences</h2>
-          <div class="subtitle">Swipe right to like • left to dislike</div>
-        </div>
-      </div>
-      <div class="controls-top">
-        <button id="undoBtn" class="btn">↩ Undo</button>
-        <button id="resetBtn" class="btn">🔄 Reset</button>
-      </div>
-    </header>
-
-    <main class="content">
-      <div id="cardArea" class="card-area" aria-live="polite"></div>
-
-      <div class="bottom-controls">
-        <button id="dislikeBtn" class="btn dislike">💔 Nope</button>
-        <button id="likeBtn" class="btn like primary">❤️ Like</button>
-      </div>
-    </main>
+<!-- bottom controls -->
+<div style="position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center">
+  <div class="controls">
+    <button class="btn" id="undoBtn">Undo</button>
+    <button class="btn" id="dislikeBtn">Dislike</button>
+    <button class="btn strong" id="likeBtn">Like</button>
+    <button class="btn" id="resetBtn">Reset</button>
   </div>
+</div>
 
-  <!-- Summary -->
-  <div id="summary" class="summary hidden" role="dialog" aria-modal="true">
-    <div class="panel">
-      <div class="panel-head">
-        <h3>All done — you liked <span id="likedCount">0</span> kitty(ies) 🐱💕</h3>
-        <button id="closeSummary" class="btn">Close</button>
-      </div>
-      <div id="likedGrid" class="liked-grid"></div>
-      <div style="text-align:center;margin-top:14px">
-        <button id="restartBtn" class="btn primary">Try Again</button>
-      </div>
+<!-- card template -->
+<template id="cardTemplate">
+  <div class="card">
+    <div class="badge like">Liked ❤️</div>
+    <div class="badge dislike">Nope 💔</div>
+    <img src="" alt="Cute cat" />
+    <div class="meta">Kitty</div>
+  </div>
+</template>
+
+<script>
+(function(){
+  const NUM_CATS = 14;
+  const cardArea = document.getElementById('cardArea');
+  const template = document.getElementById('cardTemplate');
+  const likeBtn = document.getElementById('likeBtn');
+  const dislikeBtn = document.getElementById('dislikeBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const undoBtn = document.getElementById('undoBtn');
+
+  const soundLike = document.getElementById('soundLike');
+  const soundDislike = document.getElementById('soundDislike');
+  const soundUndo = document.getElementById('soundUndo');
+
+  let cards = [];
+  let liked = [];
+  let history = [];
+
+  function makeCatUrl(i){
+    return `https://cataas.com/cat?type=medium&timestamp=${Date.now()}_${i}`;
+  }
+
+  async function preloadCats(n){
+    const urls = Array.from({length:n}, (_,i)=>makeCatUrl(i));
+    const imgs = await Promise.all(urls.map(u=>new Promise((res)=>{ const i=new Image(); i.onload=()=>res(u); i.onerror=()=>res(u); i.src=u; })));
+    return imgs;
+  }
+
+  function createCard(url,index){
+    const node = template.content.firstElementChild.cloneNode(true);
+    node.querySelector('img').src = url;
+    node.dataset.index = index;
+    cardArea.appendChild(node);
+    return node;
+  }
+
+  function setup(nodes){
+    cards = Array.from(nodes);
+    cards.forEach((c,i)=>{ c.style.zIndex=i; addDragHandlers(c); });
+  }
+
+  function showSummary(){
+    const overlay=document.createElement('div');overlay.className='summary';
+    const panel=document.createElement('div');panel.className='panel';
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>All done — you liked ${liked.length} cat(s)</h2>
+      <button class='btn' id='closeSummary'>Close</button>
     </div>
-  </div>
+    <div class='liked-grid'></div>`;
+    overlay.appendChild(panel);document.body.appendChild(overlay);
+    const grid=panel.querySelector('.liked-grid');
+    if(!liked.length){grid.innerHTML="<div style='color:var(--muted)'>You didn't like any cats — try again!</div>"}
+    liked.forEach(u=>{const im=document.createElement('img');im.src=u;grid.appendChild(im)});
+    panel.querySelector('#closeSummary').onclick=()=>overlay.remove();
+  }
 
-  <!-- Accessible hidden audio elements; script will try to load these but will fallback to WebAudio if missing -->
-  <audio id="meowAudio" src="assets/meow.mp3" preload="auto"></audio>
-  <audio id="popAudio" src="assets/pop.mp3" preload="auto"></audio>
+  function swipeTop(direction){
+    const top = cardArea.lastElementChild;
+    if(!top) return;
+    const url = top.querySelector('img').src;
 
-  <script src="script.js" defer></script>
+    if(direction==="right") soundLike.play();
+    else soundDislike.play();
+
+    top.style.transition='transform 350ms ease,opacity 250ms ease';
+    const offX = direction==='right' ? window.innerWidth : -window.innerWidth;
+    top.style.transform=`translate(${offX}px,-40px) rotate(${direction==='right'?25:-25}deg)`;
+    top.style.opacity='0';
+    top.classList.toggle('show-like',direction==='right');
+    top.classList.toggle('show-dislike',direction!=='right');
+
+    setTimeout(()=>{ top.remove(); history.push({type:direction,url}); if(direction==='right') liked.push(url); if(!cardArea.lastElementChild) showSummary(); },300);
+  }
+
+  function undo(){
+    const last = history.pop();
+    if(!last) return;
+
+    soundUndo.play();
+
+    const node = createCard(last.url,999);
+    if(last.type==='right'){ const idx=liked.lastIndexOf(last.url); if(idx>-1) liked.splice(idx,1); }
+    node.style.transition='none';node.style.opacity='1';
+    addDragHandlers(node);
+  }
+
+  likeBtn.onclick=()=>swipeTop('right');
+  dislikeBtn.onclick=()=>swipeTop('left');
+  resetBtn.onclick=()=>location.reload();
+  undoBtn.onclick=undo;
+
+  function addDragHandlers(card){
+    let sx=0, sy=0, cx=0, cy=0, drag=false;
+    const img = card.querySelector('img');
+
+    function down(e){ drag=true; card.style.transition='none';
+      sx=(e.touches?e.touches[0].clientX:e.clientX);
+      sy=(e.touches?e.touches[0].clientY:e.clientY);
+    }
+    function move(e){
+      if(!drag) return;
+      cx=(e.touches?e.touches[0].clientX:e.clientX)-sx;
+      cy=(e.touches?e.touches[0].clientY:e.clientY)-sy;
+      const r=cx*0.08;
+      card.style.transform=`translate(${cx}px,${cy}px) rotate(${r}deg)`;
+      if(cx>40) card.classList.add('show-like'),card.classList.remove('show-dislike');
+      else if(cx<-40) card.classList.add('show-dislike'),card.classList.remove('show-like');
+      else card.classList.remove('show-like','show-dislike');
+    }
+    function up(){
+      if(!drag) return; drag=false;
+      const t = cardArea.clientWidth*0.25;
+      if(cx>t){ card.style.transition='350ms'; card.style.transform=`translate(${window.innerWidth}px,${cy}px) rotate(30deg)`; card.style.opacity=0;
+        setTimeout(()=>{card.remove();history.push({type:'right',url:img.src});liked.push(img.src);if(!cardArea.lastElementChild)showSummary();},320);
+        soundLike.play();
+      }
+      else if(cx<-t){ card.style.transition='350ms'; card.style.transform=`translate(${-window.innerWidth}px,${cy}px) rotate(-30deg)`; card.style.opacity=0;
+        setTimeout(()=>{card.remove();history.push({type:'left',url:img.src});if(!cardArea.lastElementChild)showSummary();},320);
+        soundDislike.play();
+      }
+      else{ card.style.transition='220ms'; card.style.transform=''; card.classList.remove('show-like','show-dislike'); }
+      cx=cy=0;
+    }
+
+    card.addEventListener('touchstart',down,{passive:true});
+    card.addEventListener('touchmove',move,{passive:true});
+    card.addEventListener('touchend',up);
+
+    card.addEventListener('mousedown',down);
+    window.addEventListener('mousemove',move);
+    window.addEventListener('mouseup',up);
+  }
+
+  (async function init(){
+    const urls=await preloadCats(NUM_CATS);
+    urls.forEach((u,i)=>createCard(u,i));
+    setTimeout(()=>setup(cardArea.children),40);
+  })();
+
+})();
+</script>
 </body>
 </html>
