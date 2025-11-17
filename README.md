@@ -45,3 +45,12 @@ This project is fully front-end and relies on HTML, CSS, and JavaScript. It dyna
 
 You can view the live demo on [GitHub Pages](https://tanleon.github.io/paws-preferences/).
 
+---
+
+## Audio References
+
+- **meow.mp3**  
+  Sound Effect by [SOUND_GARAGE](https://pixabay.com/users/sound_garage-47313534/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=306184) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=306184)
+
+- **pop.mp3**  
+  Sound Effect by [floraphonic](https://pixabay.com/users/floraphonic-38928062/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=188150) from [Pixabay](https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=188150)
